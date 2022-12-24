@@ -29,7 +29,7 @@
     minute: "{{ backup_minute }}"
     hour: "{{ backup_hour }}"
     user: "{{ backup_user }}"
-    job: "{{ backup_path }}/backup.sh"
+    job: "{{ backup_path }}/backup.sh 2>&1 | logger -t backupscript"
     state: "{{ backup_cron_job_state }}"
 
 - name: Add backup remote host key to server.

@@ -5,6 +5,20 @@
 # Backup for simple servers - shell script.
 #
 # @author Jeff Geerling, 2014, 2017
+# Modified by jmansar, 2022 
+
+declare -i ERRORS_COUNT
+declare -i BACKUP_OPS_COUNT
+
+ERRORS_COUNT=0
+BACKUP_OPS_COUNT=0
+
+ErrorHandler () {
+    ((++ERRORS_COUNT))
+    echo "Error occured at line number $LINENO: $BASH_COMMAND" 
+}
+
+trap ErrorHandler ERR
 
 # Common variables.
 REMOTE="{{ backup_remote_connection }}"
@@ -12,7 +26,7 @@ RSYNC=/usr/bin/rsync
 
 # Backup individual directories.
 {% for directory in backup_directories %}
-$RSYNC -aqz -e 'ssh {{ backup_remote_connection_ssh_options }}' --delete --exclude-from '{{ backup_path }}/backup-exclude.txt' {{ directory }} $REMOTE:{{ backup_remote_base_path }}/{{ backup_identifier }}
+$RSYNC -aqz -e 'ssh {{ backup_remote_connection_ssh_options }}' --delete --exclude-from '{{ backup_path }}/backup-exclude.txt' {{ directory }} $REMOTE:{{ backup_remote_base_path }}/{{ backup_identifier }} && ((++BACKUP_OPS_COUNT)) || ((++ERRORS_COUNT))
 {% endfor %}
 
 {% if backup_mysql %}
@@ -34,5 +48,13 @@ do
 done
 
 # Sync the databases directory.
-$RSYNC -aqz -e 'ssh {{ backup_remote_connection_ssh_options }}' {{ backup_path }}/databases $REMOTE:{{ backup_remote_base_path }}/{{ backup_identifier }}
+$RSYNC -aqz -e 'ssh {{ backup_remote_connection_ssh_options }}' {{ backup_path }}/databases $REMOTE:{{ backup_remote_base_path }}/{{ backup_identifier }} && ((++BACKUP_OPS_COUNT)) || ((++ERRORS_COUNT))
 {% endif %}
+
+if [ $ERRORS_COUNT -eq 0 ]; then
+    echo "Backup completed successfully. Count: $BACKUP_OPS_COUNT"
+else
+    echo "Error occured while executing backup script"
+    exit $ERRORS_COUNT
+fi
+
