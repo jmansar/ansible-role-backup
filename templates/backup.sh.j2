@@ -52,7 +52,7 @@ $RSYNC -aqz -e 'ssh {{ backup_remote_connection_ssh_options }}' {{ backup_path }
 {% endif %}
 
 if [ $ERRORS_COUNT -eq 0 ]; then
-    echo "Backup completed successfully. Count: $BACKUP_OPS_COUNT"
+    echo "Backup completed successfully. backup_ops_count=$BACKUP_OPS_COUNT"
 else
     echo "Error occured while executing backup script"
     exit $ERRORS_COUNT
